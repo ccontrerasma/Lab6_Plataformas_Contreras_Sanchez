@@ -8,7 +8,9 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
+import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.Region;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.MutableLiveData;
@@ -36,13 +38,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(buildingView);  // Establecer el View personalizado
     }
 
-    // Clase personalizada para dibujar la edificación
     public class BuildingView extends View {
-        private Paint paint;
-        private Rect salon1, salon2, salon3, salon4;
-        private String[] labels = {"Salón 1", "Salón 2", "Salón 3", "Salón 4"};
-        private Rect infoRect; // Rectángulo para la información
-        private String infoText; // Texto para mostrar la información
+        private Paint paint, pointPaint, textPaint;
+        private List<Path> ambientes; // Lista para almacenar las formas de cada ambiente
+        private List<Region> ambienteRegions; // Lista para almacenar las regiones de cada ambiente
+        private String[] labels = {"Sala Principal", "Patio", "Capilla", "Altar"};
+        private float[][] puntos; // Coordenadas para los puntos de referencia
 
         public BuildingView(Context context) {
             super(context);
@@ -52,34 +53,96 @@ public class MainActivity extends AppCompatActivity {
         private void init() {
             paint = new Paint();
             paint.setColor(Color.BLACK);
-            paint.setTextSize(40);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(5);
 
-            // Definir los rectángulos de los salones
-            salon1 = new Rect(100, 100, 400, 300);
-            salon2 = new Rect(450, 100, 750, 300);
-            salon3 = new Rect(100, 350, 400, 550);
-            salon4 = new Rect(450, 350, 750, 550);
-            infoRect = new Rect(50, 20, 900, 80); // Rectángulo para la información
+            textPaint = new Paint();
+            textPaint.setColor(Color.BLACK);
+            textPaint.setTextSize(40);
+
+            pointPaint = new Paint();
+            pointPaint.setColor(Color.parseColor("#FFA500")); // Naranja
+            pointPaint.setStyle(Paint.Style.FILL);
+
+            // Crear formas irregulares para cada ambiente (utilizando Path)
+            ambientes = new ArrayList<>();
+            ambienteRegions = new ArrayList<>();
+
+            // Crear Path y Region para Sala Principal
+            Path salaPrincipal = new Path();
+            salaPrincipal.moveTo(100, 100);
+            salaPrincipal.lineTo(400, 100);
+            salaPrincipal.lineTo(400, 300);
+            salaPrincipal.lineTo(250, 300);
+            salaPrincipal.lineTo(250, 450);
+            salaPrincipal.lineTo(100, 450);
+            salaPrincipal.close();
+            ambientes.add(salaPrincipal);
+            ambienteRegions.add(createRegionFromPath(salaPrincipal));
+
+            // Crear Path y Region para Patio
+            Path patio = new Path();
+            patio.moveTo(400, 100);
+            patio.lineTo(700, 100);
+            patio.lineTo(700, 300);
+            patio.lineTo(400, 300);
+            patio.close();
+            ambientes.add(patio);
+            ambienteRegions.add(createRegionFromPath(patio));
+
+            // Crear Path y Region para Capilla
+            Path capilla = new Path();
+            capilla.moveTo(100, 450);
+            capilla.lineTo(250, 450);
+            capilla.lineTo(250, 650);
+            capilla.lineTo(100, 650);
+            capilla.close();
+            ambientes.add(capilla);
+            ambienteRegions.add(createRegionFromPath(capilla));
+
+            // Crear Path y Region para Altar
+            Path altar = new Path();
+            altar.moveTo(250, 450);
+            altar.lineTo(400, 450);
+            altar.lineTo(400, 650);
+            altar.lineTo(250, 650);
+            altar.close();
+            ambientes.add(altar);
+            ambienteRegions.add(createRegionFromPath(altar));
+
+            // Coordenadas de los puntos de referencia en cada ambiente
+            puntos = new float[][] {
+                    {200, 200}, // Sala Principal
+                    {550, 200}, // Patio
+                    {150, 550}, // Capilla
+                    {300, 550}  // Altar
+            };
+        }
+
+        private Region createRegionFromPath(Path path) {
+            Region region = new Region();
+            RectF bounds = new RectF();
+            path.computeBounds(bounds, true);
+            region.setPath(path, new Region((int) bounds.left, (int) bounds.top, (int) bounds.right, (int) bounds.bottom));
+            return region;
         }
 
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
 
-            // Dibujo de los salones
-            paint.setColor(Color.GRAY);
-            canvas.drawRect(salon1, paint);
-            canvas.drawRect(salon2, paint);
-            canvas.drawRect(salon3, paint);
-            canvas.drawRect(salon4, paint);
+            // Dibujar cada ambiente
+            for (int i = 0; i < ambientes.size(); i++) {
+                canvas.drawPath(ambientes.get(i), paint);
+                float labelX = puntos[i][0] - 50;  // Ajuste de posición del texto
+                float labelY = puntos[i][1] - 20;
+                canvas.drawText(labels[i], labelX, labelY, textPaint);
+            }
 
-            // Dibujo de las etiquetas
-            paint.setColor(Color.BLACK);
-            canvas.drawText(labels[0], salon1.centerX() - 40, salon1.centerY(), paint);
-            canvas.drawText(labels[1], salon2.centerX() - 40, salon2.centerY(), paint);
-            canvas.drawText(labels[2], salon3.centerX() - 40, salon3.centerY(), paint);
-            canvas.drawText(labels[3], salon4.centerX() - 40, salon4.centerY(), paint);
-
+            // Dibujar puntos de referencia
+            for (float[] punto : puntos) {
+                canvas.drawCircle(punto[0], punto[1], 10, pointPaint);
+            }
         }
 
         @Override
@@ -88,16 +151,13 @@ public class MainActivity extends AppCompatActivity {
                 float x = event.getX();
                 float y = event.getY();
 
-                if (salon1.contains((int) x, (int) y)) {
-                    mostrarInformacion("Salón 1");
-                } else if (salon2.contains((int) x, (int) y)) {
-                    mostrarInformacion("Salón 2");
-                } else if (salon3.contains((int) x, (int) y)) {
-                    mostrarInformacion("Salón 3");
-                } else if (salon4.contains((int) x, (int) y)) {
-                    mostrarInformacion("Salón 4");
+                // Detectar en qué ambiente se hizo clic
+                for (int i = 0; i < ambienteRegions.size(); i++) {
+                    if (ambienteRegions.get(i).contains((int) x, (int) y)) {
+                        mostrarInformacion(labels[i]);
+                        return true;
+                    }
                 }
-                return true;
             }
             return false;
         }
@@ -108,9 +168,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // ViewModel para gestionar los datos de los ambientes
     public static class BuildingViewModel extends ViewModel {
-        private MutableLiveData<List<Rect>> ambientesLiveData;
+        private MutableLiveData<List<Path>> ambientesLiveData;
 
         public BuildingViewModel() {
             ambientesLiveData = new MutableLiveData<>();
@@ -118,17 +177,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void cargarDatosDesdeArchivo() {
-            // Por lo pronto con un List
-            List<Rect> ambientes = new ArrayList<>();
-            ambientes.add(new Rect(100, 100, 400, 300));  // Salón 1
-            ambientes.add(new Rect(450, 100, 750, 300));  // Salón 2
-            ambientes.add(new Rect(100, 350, 400, 550));  // Patio 1
-            ambientes.add(new Rect(450, 350, 750, 550));  // Patio 2
+            // Simulación de carga de datos desde archivo
+            List<Path> ambientes = new ArrayList<>();
+            // Añadir paths específicos si fuese necesario
             ambientesLiveData.setValue(ambientes);
         }
 
-        public MutableLiveData<List<Rect>> getAmbientes() {
+        public MutableLiveData<List<Path>> getAmbientes() {
             return ambientesLiveData;
         }
     }
 }
+
+
+
+

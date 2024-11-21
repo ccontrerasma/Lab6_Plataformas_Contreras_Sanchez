@@ -1,16 +1,12 @@
-    package com.example.uicomponente;
-
+package com.example.uicomponente;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
 
 public class RoomInfoFragment extends DialogFragment {
     private static final String ARG_ROOM_NAME = "ROOM_NAME";
@@ -41,16 +37,17 @@ public class RoomInfoFragment extends DialogFragment {
 
     private String getRoomDescription(String roomName) {
         switch (roomName) {
-            case "Room 1":
-                return "Descripción del Room 1";
-            case "Room 2":
-                return "Descripción del Room 2";
-            case "Room 3":
-                return "Descripción del Room 3";
             case "Patio":
-                return "Descripción del Patio";
+                return "Seccion de la infraestructura";
+            case "Sala Principal":
+                return "Sala principal de la infraestructura";
+            case "Capilla":
+                return "Capilla, se encuentra en la parte baja izquierda de la infraestructura";
+            case "Altar":
+                return "Altar de la infraestructura";
             default:
                 return "Información no disponible";
         }
     }
 }
+
